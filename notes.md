@@ -1,4 +1,4 @@
-#junit
+# junit
 ## 1. 依赖管理
 ~~~
 <dependency>
@@ -214,4 +214,76 @@ public class ExpectationsConstructorTest2 {
 }
 ~~~
 
+（6）Mockup&@Mock
+
+~~~
+public class MockUpTest {
+ 
+    @Test
+    public void testMockUp() {
+        // 对Java自带类Calendar的get方法进行定制
+        // 只需要把Calendar类传入MockUp类的构造函数即可
+        new MockUp<Calendar>(Calendar.class) {
+            // 想Mock哪个方法，就给哪个方法加上@Mock， 没有@Mock的方法，不受影响
+            @Mock
+            public int get(int unit) {
+                if (unit == Calendar.YEAR) {
+                    return 2017;
+                }
+                if (unit == Calendar.MONDAY) {
+                    return 12;
+                }
+                if (unit == Calendar.DAY_OF_MONTH) {
+                    return 25;
+                }
+                if (unit == Calendar.HOUR_OF_DAY) {
+                    return 7;
+                }
+                return 0;
+            }
+        };
+        // 从此Calendar的get方法，就沿用你定制过的逻辑，而不是它原先的逻辑。
+        Calendar cal = Calendar.getInstance(Locale.FRANCE);
+        Assert.assertTrue(cal.get(Calendar.YEAR) == 2017);
+        Assert.assertTrue(cal.get(Calendar.MONDAY) == 12);
+        Assert.assertTrue(cal.get(Calendar.DAY_OF_MONTH) == 25);
+        Assert.assertTrue(cal.get(Calendar.HOUR_OF_DAY) == 7);
+        // Calendar的其它方法，不受影响
+        Assert.assertTrue((cal.getFirstDayOfWeek() == Calendar.MONDAY));
+ 
+    }
+}
+~~~
+缺点
+
+a)一个类有多个实例。只对其中某1个实例进行mock。 
+ 最新版的JMockit已经让MockUp不再支持对实例的Mock了。1.19之前的老版本仍支持。
+
+b)AOP动态生成类的Mock。
+
+c)对类的所有方法都需要Mock时，书写MockUp的代码量太大。
+
+（7）Verification
+
+~~~
+new Verifications() {
+    // 这是一个Verifications匿名内部类
+    {
+          // 这个是内部类的初始化代码块，我们在这里写验证脚本，脚本的格式要遵循下面的约定
+        //方法调用(可是类的静态方法调用，也可以是对象的非静态方法调用)
+        //times/minTimes/maxTimes 表示调用次数的限定要求。赋值要紧跟在方法调用后面，也可以不写（表示只要调用过就行，不限次数）
+        //...其它准备验证脚本的代码
+        //方法调用
+        //times/minTimes/maxTimes 赋值
+    }
+};
+  
+还可以再写new一个Verifications，只要出现在重放阶段之后均有效。
+new Verifications() {
+       
+    {
+         //...验证脚本
+    }
+};
+~~~
 
